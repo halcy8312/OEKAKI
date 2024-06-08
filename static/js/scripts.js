@@ -1,4 +1,4 @@
-　document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const uploadButton = document.getElementById('upload');
@@ -26,24 +26,39 @@
     function draw(event) {
         if (!drawing) return;
 
+        event.preventDefault();
         ctx.lineWidth = size;
         ctx.lineCap = 'round';
-        
+
         if (tool === 'pen') {
             ctx.strokeStyle = color;
         } else if (tool === 'eraser') {
             ctx.strokeStyle = '#FFFFFF';
         }
 
-        ctx.lineTo(event.offsetX, event.offsetY);
+        const rect = canvas.getBoundingClientRect();
+        let x, y;
+
+        if (event.touches) {
+            x = event.touches[0].clientX - rect.left;
+            y = event.touches[0].clientY - rect.top;
+        } else {
+            x = event.clientX - rect.left;
+            y = event.clientY - rect.top;
+        }
+
+        ctx.lineTo(x, y);
         ctx.stroke();
         ctx.beginPath();
-        ctx.moveTo(event.offsetX, event.offsetY);
+        ctx.moveTo(x, y);
     }
 
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mouseup', stopDrawing);
     canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('touchstart', startDrawing);
+    canvas.addEventListener('touchend', stopDrawing);
+    canvas.addEventListener('touchmove', draw);
 
     toolSelect.addEventListener('change', function() {
         tool = this.value;
@@ -81,7 +96,17 @@
                 const img = new Image();
                 img.src = `/static/images/${data.filename}`;
                 img.onload = function() {
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const aspectRatio = img.width / img.height;
+                    let drawWidth = canvas.width;
+                    let drawHeight = canvas.height;
+
+                    if (img.width > img.height) {
+                        drawHeight = canvas.width / aspectRatio;
+                    } else {
+                        drawWidth = canvas.height * aspectRatio;
+                    }
+
+                    ctx.drawImage(img, 0, 0, drawWidth, drawHeight);
                 };
             } else {
                 console.error('File upload failed:', data.error);
@@ -94,22 +119,11 @@
 
     saveButton.addEventListener('click', function() {
         const dataUrl = canvas.toDataURL('image/png');
-
-        fetch('/save', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                original_image: dataUrl,
-                drawing: dataUrl
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                alert('Image saved successfully!');
-            }
-        });
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = 'drawing.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     });
 });

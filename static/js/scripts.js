@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let tool = 'pen';
     let color = '#000000';
     let size = 5;
+    let image = null;
 
     function startDrawing(event) {
         drawing = true;
@@ -30,12 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.lineWidth = size;
         ctx.lineCap = 'round';
 
-        if (tool === 'pen') {
-            ctx.strokeStyle = color;
-        } else if (tool === 'eraser') {
-            ctx.strokeStyle = '#FFFFFF';
-        }
-
         const rect = canvas.getBoundingClientRect();
         let x, y;
 
@@ -47,10 +42,36 @@ document.addEventListener('DOMContentLoaded', function() {
             y = event.clientY - rect.top;
         }
 
+        if (tool === 'pen') {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = color;
+        } else if (tool === 'eraser') {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.strokeStyle = 'rgba(0,0,0,1)';
+        }
+
         ctx.lineTo(x, y);
         ctx.stroke();
         ctx.beginPath();
         ctx.moveTo(x, y);
+    }
+
+    function resizeCanvasToDisplaySize() {
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+
+        if (canvas.width !== width || canvas.height !== height) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(canvas, 0, 0);
+
+            canvas.width = width;
+            canvas.height = height;
+
+            ctx.drawImage(tempCanvas, 0, 0, width, height);
+        }
     }
 
     canvas.addEventListener('mousedown', startDrawing);
@@ -96,9 +117,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 const img = new Image();
                 img.src = `/static/images/${data.filename}`;
                 img.onload = function() {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
+                    image = img;
+                    const aspectRatio = img.width / img.height;
+                    const maxCanvasWidth = window.innerWidth - 20;
+                    const maxCanvasHeight = window.innerHeight - 20;
+
+                    let canvasWidth, canvasHeight;
+                    if (aspectRatio > 1) {
+                        canvasWidth = maxCanvasWidth;
+                        canvasHeight = maxCanvasWidth / aspectRatio;
+                    } else {
+                        canvasHeight = maxCanvasHeight;
+                        canvasWidth = maxCanvasHeight * aspectRatio;
+                    }
+
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
+
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 };
             } else {
                 console.error('File upload failed:', data.error);
@@ -118,4 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
         link.click();
         document.body.removeChild(link);
     });
+
+    window.addEventListener('resize', resizeCanvasToDisplaySize);
 });

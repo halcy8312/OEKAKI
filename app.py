@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 import os
 from werkzeug.utils import secure_filename
 from PIL import Image
@@ -8,6 +8,7 @@ import base64
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/images/'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+app.secret_key = 'supersecretkey'
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -19,19 +20,19 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        app.logger.error('No file part')
-        return jsonify({'error': 'No file part'})
+        flash('No file part')
+        return redirect(request.url)
     file = request.files['file']
     if file.filename == '':
-        app.logger.error('No selected file')
-        return jsonify({'error': 'No selected file'})
+        flash('No selected file')
+        return redirect(request.url)
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         app.logger.info(f'File uploaded: {filename}')
         return jsonify({'filename': filename})
-    app.logger.error('File not allowed')
-    return jsonify({'error': 'File not allowed'})
+    flash('File not allowed')
+    return redirect(request.url)
 
 @app.route('/save', methods=['POST'])
 def save_image():

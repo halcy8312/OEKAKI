@@ -85,12 +85,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
             } else {
                 console.error('File upload failed:', data.error);
-                alert('File upload failed: ' + data.error);
             }
         })
         .catch(error => {
             console.error('An error occurred while uploading the image:', error);
-            alert('An error occurred while uploading the image.');
         });
     });
 

@@ -41,19 +41,23 @@ def upload_file():
 @app.route('/save', methods=['POST'])
 def save_image():
     data = request.json
-    original_image_data = data['original_image'].split(",")[1]
-    drawing_data = data['drawing'].split(",")[1]
+    merged_image_data = data['merged_image']
+    drawing_image_data = data['drawing_image']
 
-    original_image = Image.open(io.BytesIO(base64.b64decode(original_image_data)))
-    drawing_image = Image.open(io.BytesIO(base64.b64decode(drawing_data)))
+    merged_image = Image.open(io.BytesIO(base64.b64decode(merged_image_data.split(',')[1])))
+    drawing_image = Image.open(io.BytesIO(base64.b64decode(drawing_image_data.split(',')[1])))
 
-    original_image.paste(drawing_image, (0, 0), drawing_image)
+    merged_image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'merged_image.png')
+    drawing_image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'drawing_image.png')
 
-    output = io.BytesIO()
-    original_image.save(output, format='PNG')
-    output.seek(0)
+    merged_image.save(merged_image_path)
+    drawing_image.save(drawing_image_path)
 
-    return jsonify({'status': 'success'})
+    return jsonify(status='success')
+
+@app.route('/result')
+def result():
+    return render_template('result.html')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

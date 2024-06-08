@@ -158,27 +158,35 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     saveButton.addEventListener('click', function() {
-        const option = downloadOption.value;
-        let dataUrl;
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = drawingCanvas.width;
+        tempCanvas.height = drawingCanvas.height;
+        tempCtx.drawImage(backgroundCanvas, 0, 0);
+        tempCtx.drawImage(drawingCanvas, 0, 0);
+        const mergedDataUrl = tempCanvas.toDataURL('image/png');
+        const drawingDataUrl = drawingCanvas.toDataURL('image/png');
 
-        if (option === 'merged') {
-            const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCanvas.width = drawingCanvas.width;
-            tempCanvas.height = drawingCanvas.height;
-            tempCtx.drawImage(backgroundCanvas, 0, 0);
-            tempCtx.drawImage(drawingCanvas, 0, 0);
-            dataUrl = tempCanvas.toDataURL('image/png');
-        } else {
-            dataUrl = drawingCanvas.toDataURL('image/png');
-        }
-
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = option === 'merged' ? 'merged_image.png' : 'drawing_only.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        fetch('/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                merged_image: mergedDataUrl,
+                drawing_image: drawingDataUrl
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = '/result';
+            } else {
+                console.error('Failed to save images');
+            }
+        })
+        .catch(error => {
+            console.error('An error occurred while saving the images:', error);
+        });
     });
 
     window.addEventListener('resize', resizeCanvasToDisplaySize);

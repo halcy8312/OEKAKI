@@ -4,8 +4,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadButton = document.getElementById('upload');
     const saveButton = document.getElementById('save');
     const fileInput = document.getElementById('fileInput');
+    const toolSelect = document.getElementById('tool');
+    const colorPicker = document.getElementById('colorPicker');
+    const sizePicker = document.getElementById('sizePicker');
 
     let drawing = false;
+    let tool = 'pen';
+    let color = '#000000';
+    let size = 5;
 
     canvas.addEventListener('mousedown', function() {
         drawing = true;
@@ -18,12 +24,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     canvas.addEventListener('mousemove', draw);
 
+    toolSelect.addEventListener('change', function() {
+        tool = this.value;
+    });
+
+    colorPicker.addEventListener('input', function() {
+        color = this.value;
+    });
+
+    sizePicker.addEventListener('input', function() {
+        size = this.value;
+    });
+
     function draw(event) {
         if (!drawing) return;
 
-        ctx.lineWidth = 5;
+        ctx.lineWidth = size;
         ctx.lineCap = 'round';
-        ctx.strokeStyle = '#000';
+        
+        if (tool === 'pen') {
+            ctx.strokeStyle = color;
+        } else if (tool === 'eraser') {
+            ctx.strokeStyle = '#FFFFFF';
+        }
 
         ctx.lineTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
         ctx.stroke();

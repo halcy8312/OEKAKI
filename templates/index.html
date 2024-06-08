@@ -11,6 +11,12 @@
         <button id="upload">Upload Image</button>
         <input type="file" id="fileInput" style="display: none;">
         <button id="save">Save Image</button>
+        <select id="tool">
+            <option value="pen">Pen</option>
+            <option value="eraser">Eraser</option>
+        </select>
+        <input type="color" id="colorPicker" value="#000000">
+        <input type="range" id="sizePicker" min="1" max="10" value="5">
     </div>
     <canvas id="canvas" width="800" height="600"></canvas>
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>

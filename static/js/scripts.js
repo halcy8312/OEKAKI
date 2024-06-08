@@ -1,9 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    const backgroundCanvas = document.getElementById('backgroundCanvas');
+    const backgroundCtx = backgroundCanvas.getContext('2d');
+    const drawingCanvas = document.getElementById('drawingCanvas');
+    const drawingCtx = drawingCanvas.getContext('2d');
     const uploadButton = document.getElementById('upload');
     const saveButton = document.getElementById('save');
     const fileInput = document.getElementById('fileInput');
+    const downloadOption = document.getElementById('downloadOption');
     const toolSelect = document.getElementById('tool');
     const colorPicker = document.getElementById('colorPicker');
     const sizePicker = document.getElementById('sizePicker');
@@ -21,17 +24,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function stopDrawing() {
         drawing = false;
-        ctx.beginPath();
+        drawingCtx.beginPath();
     }
 
     function draw(event) {
         if (!drawing) return;
 
         event.preventDefault();
-        ctx.lineWidth = size;
-        ctx.lineCap = 'round';
+        drawingCtx.lineWidth = size;
+        drawingCtx.lineCap = 'round';
 
-        const rect = canvas.getBoundingClientRect();
+        const rect = drawingCanvas.getBoundingClientRect();
         let x, y;
 
         if (event.touches) {
@@ -43,35 +46,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (tool === 'pen') {
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.strokeStyle = color;
+            drawingCtx.globalCompositeOperation = 'source-over';
+            drawingCtx.strokeStyle = color;
         } else if (tool === 'eraser') {
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.strokeStyle = 'rgba(0,0,0,1)';
+            drawingCtx.globalCompositeOperation = 'destination-out';
+            drawingCtx.strokeStyle = 'rgba(0,0,0,1)';
         }
 
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(x, y);
+        drawingCtx.lineTo(x, y);
+        drawingCtx.stroke();
+        drawingCtx.beginPath();
+        drawingCtx.moveTo(x, y);
     }
 
     function resizeCanvasToDisplaySize() {
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
+        const width = drawingCanvas.clientWidth;
+        const height = drawingCanvas.clientHeight;
 
-        if (canvas.width !== width || canvas.height !== height) {
+        if (drawingCanvas.width !== width || drawingCanvas.height !== height) {
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
+            tempCanvas.width = drawingCanvas.width;
+            tempCanvas.height = drawingCanvas.height;
             const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(canvas, 0, 0);
+            tempCtx.drawImage(drawingCanvas, 0, 0);
 
-            canvas.width = width;
-            canvas.height = height;
+            drawingCanvas.width = width;
+            drawingCanvas.height = height;
 
-            ctx.drawImage(tempCanvas, 0, 0, width, height);
+            drawingCtx.drawImage(tempCanvas, 0, 0, width, height);
         }
+    }
+
+    function updateCanvasSize(width, height) {
+        backgroundCanvas.width = width;
+        backgroundCanvas.height = height;
+        drawingCanvas.width = width;
+        drawingCanvas.height = height;
+    }
+
+    function drawImageOnBackgroundCanvas(img) {
+        const aspectRatio = img.width / img.height;
+        const maxCanvasWidth = window.innerWidth - 20;
+        const maxCanvasHeight = window.innerHeight - 20;
+
+        let canvasWidth, canvasHeight;
+        if (aspectRatio > 1) {
+            canvasWidth = maxCanvasWidth;
+            canvasHeight = maxCanvasWidth / aspectRatio;
+        } else {
+            canvasHeight = maxCanvasHeight;
+            canvasWidth = maxCanvasHeight * aspectRatio;
+        }
+
+        updateCanvasSize(canvasWidth, canvasHeight);
+        backgroundCtx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
     }
 
     canvas.addEventListener('mousedown', startDrawing);
@@ -118,23 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 img.src = `/static/images/${data.filename}`;
                 img.onload = function() {
                     image = img;
-                    const aspectRatio = img.width / img.height;
-                    const maxCanvasWidth = window.innerWidth - 20;
-                    const maxCanvasHeight = window.innerHeight - 20;
-
-                    let canvasWidth, canvasHeight;
-                    if (aspectRatio > 1) {
-                        canvasWidth = maxCanvasWidth;
-                        canvasHeight = maxCanvasWidth / aspectRatio;
-                    } else {
-                        canvasHeight = maxCanvasHeight;
-                        canvasWidth = maxCanvasHeight * aspectRatio;
-                    }
-
-                    canvas.width = canvasWidth;
-                    canvas.height = canvasHeight;
-
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    drawImageOnBackgroundCanvas(img);
                 };
             } else {
                 console.error('File upload failed:', data.error);
@@ -146,10 +158,24 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     saveButton.addEventListener('click', function() {
-        const dataUrl = canvas.toDataURL('image/png');
+        const option = downloadOption.value;
+        let dataUrl;
+
+        if (option === 'merged') {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = drawingCanvas.width;
+            tempCanvas.height = drawingCanvas.height;
+            tempCtx.drawImage(backgroundCanvas, 0, 0);
+            tempCtx.drawImage(drawingCanvas, 0, 0);
+            dataUrl = tempCanvas.toDataURL('image/png');
+        } else {
+            dataUrl = drawingCanvas.toDataURL('image/png');
+        }
+
         const link = document.createElement('a');
         link.href = dataUrl;
-        link.download = 'drawing.png';
+        link.download = option === 'merged' ? 'merged_image.png' : 'drawing_only.png';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

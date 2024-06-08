@@ -37,7 +37,8 @@ def upload_file():
 @app.route('/save', methods=['POST'])
 def save_image():
     data = request.json
-    original_image = Image.open(os.path.join(app.config['UPLOAD_FOLDER'], data['original_image']))
+    original_image_path = os.path.join(app.config['UPLOAD_FOLDER'], data['original_image'])
+    original_image = Image.open(original_image_path)
     drawing_data = data['drawing']
 
     drawing_image = Image.open(io.BytesIO(base64.b64decode(drawing_data.split(',')[1])))

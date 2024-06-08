@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let tool = 'pen';
     let color = '#000000';
     let size = 5;
+    let originalImageURL = null; // オリジナル画像のURLを保存する変数
 
     function startDrawing(event) {
         drawing = true;
@@ -82,6 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 img.src = `/static/images/${data.filename}`;
                 img.onload = function() {
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    originalImageURL = img.src; // オリジナル画像のURLを保存
                 };
             } else {
                 console.error('File upload failed:', data.error);
@@ -94,7 +96,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     saveButton.addEventListener('click', function() {
         const dataUrl = canvas.toDataURL('image/png');
-        const originalImage = canvas.toDataURL('image/png'); // Change this to get the original image URL
 
         fetch('/save', {
             method: 'POST',
@@ -102,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                original_image: originalImage,
+                original_image: originalImageURL.replace('/static/images/', ''), // ファイル名のみを送信
                 drawing: dataUrl
             })
         })

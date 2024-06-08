@@ -13,28 +13,15 @@ document.addEventListener('DOMContentLoaded', function() {
     let color = '#000000';
     let size = 5;
 
-    canvas.addEventListener('mousedown', function() {
+    function startDrawing(event) {
         drawing = true;
-    });
+        draw(event);
+    }
 
-    canvas.addEventListener('mouseup', function() {
+    function stopDrawing() {
         drawing = false;
         ctx.beginPath();
-    });
-
-    canvas.addEventListener('mousemove', draw);
-
-    toolSelect.addEventListener('change', function() {
-        tool = this.value;
-    });
-
-    colorPicker.addEventListener('input', function() {
-        color = this.value;
-    });
-
-    sizePicker.addEventListener('input', function() {
-        size = this.value;
-    });
+    }
 
     function draw(event) {
         if (!drawing) return;
@@ -53,6 +40,22 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.beginPath();
         ctx.moveTo(event.clientX - canvas.offsetLeft, event.clientY - canvas.offsetTop);
     }
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mousemove', draw);
+
+    toolSelect.addEventListener('change', function() {
+        tool = this.value;
+    });
+
+    colorPicker.addEventListener('input', function() {
+        color = this.value;
+    });
+
+    sizePicker.addEventListener('input', function() {
+        size = this.value;
+    });
 
     uploadButton.addEventListener('click', function() {
         fileInput.click();
@@ -75,7 +78,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 img.onload = function() {
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 };
+            } else {
+                alert('File upload failed: ' + data.error);
             }
+        })
+        .catch(error => {
+            alert('An error occurred while uploading the image.');
         });
     });
 

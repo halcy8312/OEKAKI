@@ -50,8 +50,8 @@ def save_image():
     merged_image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'merged_image.png')
     drawing_image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'drawing_image.png')
 
-    merged_image.save(merged_image_path)
-    drawing_image.save(drawing_image_path)
+    merged_image.save(merged_image_path, format='PNG', quality=100)  # Save with maximum quality
+    drawing_image.save(drawing_image_path, format='PNG', quality=100)
 
     return jsonify(status='success')
 

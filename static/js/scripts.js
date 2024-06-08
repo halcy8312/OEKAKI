@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadButton = document.getElementById('upload');
     const saveButton = document.getElementById('save');
     const fileInput = document.getElementById('fileInput');
-    const downloadOption = document.getElementById('downloadOption');
     const toolSelect = document.getElementById('tool');
     const colorPicker = document.getElementById('colorPicker');
     const sizePicker = document.getElementById('sizePicker');
@@ -16,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let color = '#000000';
     let size = 5;
     let image = null;
+    let originalWidth, originalHeight;
 
     function startDrawing(event) {
         drawing = true;
@@ -59,35 +59,10 @@ document.addEventListener('DOMContentLoaded', function() {
         drawingCtx.moveTo(x, y);
     }
 
-    function resizeCanvasToDisplaySize() {
-        const width = drawingCanvas.clientWidth;
-        const height = drawingCanvas.clientHeight;
-
-        if (drawingCanvas.width !== width || drawingCanvas.height !== height) {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = drawingCanvas.width;
-            tempCanvas.height = drawingCanvas.height;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(drawingCanvas, 0, 0);
-
-            drawingCanvas.width = width;
-            drawingCanvas.height = height;
-
-            drawingCtx.drawImage(tempCanvas, 0, 0, width, height);
-        }
-    }
-
-    function updateCanvasSize(width, height) {
-        backgroundCanvas.width = width;
-        backgroundCanvas.height = height;
-        drawingCanvas.width = width;
-        drawingCanvas.height = height;
-    }
-
-    function drawImageOnBackgroundCanvas(img) {
-        const aspectRatio = img.width / img.height;
+    function resizeCanvas() {
         const maxCanvasWidth = window.innerWidth - 20;
         const maxCanvasHeight = window.innerHeight - 20;
+        const aspectRatio = originalWidth / originalHeight;
 
         let canvasWidth, canvasHeight;
         if (aspectRatio > 1) {
@@ -98,28 +73,20 @@ document.addEventListener('DOMContentLoaded', function() {
             canvasWidth = maxCanvasHeight * aspectRatio;
         }
 
-        updateCanvasSize(canvasWidth, canvasHeight);
-        backgroundCtx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+        backgroundCanvas.style.width = canvasWidth + 'px';
+        backgroundCanvas.style.height = canvasHeight + 'px';
+        drawingCanvas.style.width = canvasWidth + 'px';
+        drawingCanvas.style.height = canvasHeight + 'px';
+
+        backgroundCanvas.width = originalWidth;
+        backgroundCanvas.height = originalHeight;
+        drawingCanvas.width = originalWidth;
+        drawingCanvas.height = originalHeight;
+
+        if (image) {
+            backgroundCtx.drawImage(image, 0, 0, originalWidth, originalHeight);
+        }
     }
-
-    drawingCanvas.addEventListener('mousedown', startDrawing);
-    drawingCanvas.addEventListener('mouseup', stopDrawing);
-    drawingCanvas.addEventListener('mousemove', draw);
-    drawingCanvas.addEventListener('touchstart', startDrawing);
-    drawingCanvas.addEventListener('touchend', stopDrawing);
-    drawingCanvas.addEventListener('touchmove', draw);
-
-    toolSelect.addEventListener('change', function() {
-        tool = this.value;
-    });
-
-    colorPicker.addEventListener('input', function() {
-        color = this.value;
-    });
-
-    sizePicker.addEventListener('input', function() {
-        size = this.value;
-    });
 
     uploadButton.addEventListener('click', function() {
         fileInput.click();
@@ -146,7 +113,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 img.src = `/static/images/${data.filename}`;
                 img.onload = function() {
                     image = img;
-                    drawImageOnBackgroundCanvas(img);
+                    originalWidth = img.width;
+                    originalHeight = img.height;
+                    resizeCanvas();
                 };
             } else {
                 console.error('File upload failed:', data.error);
@@ -160,12 +129,12 @@ document.addEventListener('DOMContentLoaded', function() {
     saveButton.addEventListener('click', function() {
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
-        tempCanvas.width = drawingCanvas.width;
-        tempCanvas.height = drawingCanvas.height;
+        tempCanvas.width = originalWidth;
+        tempCanvas.height = originalHeight;
         tempCtx.drawImage(backgroundCanvas, 0, 0);
         tempCtx.drawImage(drawingCanvas, 0, 0);
-        const mergedDataUrl = tempCanvas.toDataURL('image/png');
-        const drawingDataUrl = drawingCanvas.toDataURL('image/png');
+        const mergedDataUrl = tempCanvas.toDataURL('image/png', 1.0);  // Use 1.0 for best quality
+        const drawingDataUrl = drawingCanvas.toDataURL('image/png', 1.0);
 
         fetch('/save', {
             method: 'POST',
@@ -189,5 +158,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    window.addEventListener('resize', resizeCanvasToDisplaySize);
+    window.addEventListener('resize', resizeCanvas);
+
+    drawingCanvas.addEventListener('mousedown', startDrawing);
+    drawingCanvas.addEventListener('mouseup', stopDrawing);
+    drawingCanvas.addEventListener('mousemove', draw);
+    drawingCanvas.addEventListener('touchstart', startDrawing);
+    drawingCanvas.addEventListener('touchend', stopDrawing);
+    drawingCanvas.addEventListener('touchmove', draw);
+
+    toolSelect.addEventListener('change', function() {
+        tool = this.value;
+    });
+
+    colorPicker.addEventListener('input', function() {
+        color = this.value;
+    });
+
+    sizePicker.addEventListener('input', function() {
+        size = this.value;
+    });
 });

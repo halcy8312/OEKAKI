@@ -19,14 +19,18 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
+        app.logger.error('No file part')
         return jsonify({'error': 'No file part'})
     file = request.files['file']
     if file.filename == '':
+        app.logger.error('No selected file')
         return jsonify({'error': 'No selected file'})
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        app.logger.info(f'File uploaded: {filename}')
         return jsonify({'filename': filename})
+    app.logger.error('File not allowed')
     return jsonify({'error': 'File not allowed'})
 
 @app.route('/save', methods=['POST'])

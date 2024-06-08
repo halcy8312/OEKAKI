@@ -63,6 +63,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     fileInput.addEventListener('change', function() {
         const file = fileInput.files[0];
+        if (!file) {
+            console.error('No file selected');
+            return;
+        }
         const formData = new FormData();
         formData.append('file', file);
 
@@ -73,16 +77,19 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.filename) {
+                console.log('File uploaded:', data.filename);
                 const img = new Image();
                 img.src = `/static/images/${data.filename}`;
                 img.onload = function() {
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 };
             } else {
+                console.error('File upload failed:', data.error);
                 alert('File upload failed: ' + data.error);
             }
         })
         .catch(error => {
+            console.error('An error occurred while uploading the image:', error);
             alert('An error occurred while uploading the image.');
         });
     });

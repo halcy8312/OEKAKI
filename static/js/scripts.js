@@ -38,11 +38,11 @@ document.addEventListener('DOMContentLoaded', function() {
         let x, y;
 
         if (event.touches) {
-            x = event.touches[0].clientX - rect.left;
-            y = event.touches[0].clientY - rect.top;
+            x = (event.touches[0].clientX - rect.left) * (drawingCanvas.width / rect.width);
+            y = (event.touches[0].clientY - rect.top) * (drawingCanvas.height / rect.height);
         } else {
-            x = event.clientX - rect.left;
-            y = event.clientY - rect.top;
+            x = (event.clientX - rect.left) * (drawingCanvas.width / rect.width);
+            y = (event.clientY - rect.top) * (drawingCanvas.height / rect.height);
         }
 
         if (tool === 'pen') {

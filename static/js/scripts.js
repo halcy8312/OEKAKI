@@ -96,17 +96,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const img = new Image();
                 img.src = `/static/images/${data.filename}`;
                 img.onload = function() {
-                    const aspectRatio = img.width / img.height;
-                    let drawWidth = canvas.width;
-                    let drawHeight = canvas.height;
-
-                    if (img.width > img.height) {
-                        drawHeight = canvas.width / aspectRatio;
-                    } else {
-                        drawWidth = canvas.height * aspectRatio;
-                    }
-
-                    ctx.drawImage(img, 0, 0, drawWidth, drawHeight);
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
                 };
             } else {
                 console.error('File upload failed:', data.error);

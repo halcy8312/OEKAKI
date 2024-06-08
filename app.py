@@ -3,6 +3,8 @@ import os
 from werkzeug.utils import secure_filename
 from PIL import Image
 import io
+import base64
+from urllib.parse import quote
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/images/'
